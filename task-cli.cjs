@@ -2,8 +2,9 @@ const fs = require('fs/promises');
 const path = require('path');
 
 function main() {
-    const arguments = process.argv;
-    console.log(arguments)
+    const [, , command, args] = process.argv;
+    console.log(command);
+    console.log(args);
 }
 
 main();
