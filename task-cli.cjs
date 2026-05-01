@@ -37,6 +37,9 @@ async function main() {
       const idxToDel = argv[0];
       await deleteTask(idxToDel);
       break;
+    case 'mark':
+        await updateStatus(argv[0], argv[1]);
+        break;
     default:
       console.log(
         "Usage: node task-cli.cjs [add|list|update|delete|mark-done|mark-in-progress|mark-pending]",
@@ -72,7 +75,7 @@ async function listTasks(status) {
   const filteredListOfTasks = tasks.filter(filterByStatus);
 
   function filterByStatus(task) {
-    return task.status === status;
+    return (task.status === status);
   }
 
   // const filteredListOfTasks = tasks.filter(function (task) {
@@ -112,6 +115,22 @@ async function deleteTask(id) {
   await writeTasks(filteredListOfTasks);
 
   console.log(`Task with id ${id} deleted succesfully!`);
+}
+
+async function updateStatus(id, status) {
+    const tasks = await readTasks();
+    const task = tasks.find(t => t.id === parseInt(id));
+
+    if (!task) {
+        console.log(`Error: Task with ID ${id} not found.`);
+        return;
+    }
+
+    task.status = status;
+    task.updatedAt = new Date().toISOString();
+
+    await writeTasks(tasks);
+    console.log(`Task ${id} marked as ${status}.`);
 }
 
 main();
