@@ -17,17 +17,18 @@ async function writeTasks(tasks) {
 }
 
 async function main() {
-  const [, , command, argument] = process.argv;
+  const [, , command, ...argv] = process.argv;
 
   switch (command) {
     case "add":
-      const description = argument;
+      const description = argv[0];
       await addTask(description);
       break;
     case "list":
-      const status = argument;
+      const status = argv[0];
       await listTasks(status);
       break;
+
     default:
       console.log(
         "Usage: node task-cli.cjs [add|list|update|delete|mark-done|mark-in-progress|mark-pending]",
@@ -57,6 +58,20 @@ async function addTask(description) {
   console.log(`New task added successfully! ${taskId}`);
 }
 
-async function listTasks(status) {}
+async function listTasks(status) {
+  const tasks = await readTasks();
+
+  const filteredListOfTasks = tasks.filter(filterByStatus);
+
+  function filterByStatus(task) {
+    return task.status === status;
+  }
+
+  // const filteredListOfTasks = tasks.filter(function (task) {
+  //     return task.status === status;
+  // });
+
+  console.table(filteredListOfTasks);
+}
 
 main();
