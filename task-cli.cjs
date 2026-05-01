@@ -33,6 +33,10 @@ async function main() {
       const newDescription = argv[1];
       await updateTask(id, newDescription);
       break;
+    case "delete":
+      const idxToDel = argv[0];
+      await deleteTask(idxToDel);
+      break;
     default:
       console.log(
         "Usage: node task-cli.cjs [add|list|update|delete|mark-done|mark-in-progress|mark-pending]",
@@ -94,6 +98,20 @@ async function updateTask(id, description) {
   await writeTasks(tasks);
 
   console.log(`Task with id ${id} updated successfully!`);
+}
+
+async function deleteTask(id) {
+  const tasks = await readTasks();
+
+  const filteredListOfTasks = tasks.filter(filterTaskToDelete);
+
+  function filterTaskToDelete(task) {
+    return task.id !== id;
+  }
+
+  await writeTasks(filteredListOfTasks);
+
+  console.log(`Task with id ${id} deleted succesfully!`);
 }
 
 main();
