@@ -28,7 +28,11 @@ async function main() {
       const status = argv[0];
       await listTasks(status);
       break;
-
+    case "update":
+      const id = argv[0];
+      const newDescription = argv[1];
+      await updateTask(id, newDescription);
+      break;
     default:
       console.log(
         "Usage: node task-cli.cjs [add|list|update|delete|mark-done|mark-in-progress|mark-pending]",
@@ -72,6 +76,24 @@ async function listTasks(status) {
   // });
 
   console.table(filteredListOfTasks);
+}
+
+async function updateTask(id, description) {
+  const tasks = await readTasks();
+
+  const idx = tasks.findIndex((task) => task.id === parseInt(id));
+
+  if (idx < 0) {
+    console.log(`Error: Task with ID ${idx} not found!`);
+    return;
+  }
+
+  tasks[idx].description = description;
+  tasks[idx].updatedAt = new Date().toISOString();
+
+  await writeTasks(tasks);
+
+  console.log(`Task with id ${id} updated successfully!`);
 }
 
 main();
