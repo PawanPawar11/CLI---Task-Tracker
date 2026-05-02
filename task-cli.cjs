@@ -12,15 +12,15 @@ async function readTasks() {
   } catch (error) {
     // ENOENT means 'Error NO ENTry' (file not found)
     if (error.code === "ENOENT") {
-      return [];
+      return { nextId: 1, tasks: [] };
     }
 
     throw error; // If it's a different error (like permissions), let it crash
   }
 }
 
-async function writeTasks(tasks) {
-  await fs.writeFile(DB_FILE, JSON.stringify(tasks, null, 2), "utf-8");
+async function writeTasks(data) {
+  await fs.writeFile(DB_FILE, JSON.stringify(data, null, 2), "utf-8");
 }
 
 async function main() {
@@ -60,48 +60,65 @@ async function addTask(description) {
     return;
   }
 
-  const tasks = await readTasks();
+  const data = await readTasks();
 
-  const taskId = tasks.length > 0 ? tasks[tasks.length - 1].id + 1 : 1;
-
-  tasks.push({
-    id: taskId,
+  const newTask = {
+    id: data.nextId,
     description,
     status: "to-do",
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
-  });
+  };
 
-  await writeTasks(tasks);
+  data.tasks.push(newTask);
+  data.nextId++;
 
-  console.log(`New task added successfully! ${taskId}`);
+  await writeTasks(data);
+
+  console.log(`Task added successfully (ID: ${newTask.id})`);
 }
 
 async function listTasks(status) {
-  const tasks = await readTasks();
+  const data = await readTasks();
+  const allTasks = data.tasks;
 
-  const filteredTasks = status 
-    ? tasks.filter(task => task.status === status) 
-    : tasks;
+  const validFilters = ["to-do", "in-progress", "done", "all"];
 
-  if (filteredTasks.length === 0) {
-      console.log(`No tasks found${status ? ` with status: ${status}` : ""}.`);
-      return;
+  const filter = status ? status.toLowerCase() : "all";
+
+  if (!validFilters.includes(filter)) {
+    console.error(`\x1b[31mError:\x1b[0m "${filter}" is not a valid filter.`);
+    console.log(`Valid options are: to-do, in-progress, done, all`);
+    return;
   }
 
-  const displayTable = filteredTasks.map(task => {
+  const tasksToShow =
+    filter === "all" ? allTasks : allTasks.filter((t) => t.status === filter);
+
+  if (tasksToShow.length === 0) {
+    console.log(`No tasks found${status ? ` with status: ${filter}` : ""}.`);
+    return;
+  }
+
+  const displayTable = tasksToShow.map((task) => {
     return {
       ID: task.id,
       Description: task.description,
       Status: task.status,
-      Created: new Date(task.createdAt).toLocaleString('en-GB', {
-        dateStyle: 'medium',
-        timeStyle: 'short'
+      Created: new Date(task.createdAt).toLocaleString("en-US", {
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
       }),
-      Updated: new Date(task.updatedAt).toLocaleString('en-GB', {
-        dateStyle: 'medium',
-        timeStyle: 'short'
-      })
+      Updated: new Date(task.updatedAt).toLocaleString("en-US", {
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+      }),
     };
   });
 
@@ -113,19 +130,19 @@ async function updateTask(id, description) {
     console.error("Error: Please provide a valid numeric Task ID.");
     return;
   }
-  const tasks = await readTasks();
+  const data = await readTasks();
 
-  const idx = tasks.findIndex((task) => task.id === parseInt(id));
+  const idx = data.tasks.findIndex((task) => task.id === parseInt(id));
 
   if (idx < 0) {
     console.log(`Error: Task with ID ${idx} not found!`);
     return;
   }
 
-  tasks[idx].description = description;
-  tasks[idx].updatedAt = new Date().toISOString();
+  data.tasks[idx].description = description;
+  data.tasks[idx].updatedAt = new Date().toISOString();
 
-  await writeTasks(tasks);
+  await writeTasks(data);
 
   console.log(`Task with id ${id} updated successfully!`);
 }
@@ -136,15 +153,17 @@ async function deleteTask(id) {
     return;
   }
 
-  const tasks = await readTasks();
+  const data = await readTasks();
 
-  const filteredListOfTasks = tasks.filter(filterTaskToDelete);
+  const filteredListOfTasks = data.tasks.filter(filterTaskToDelete);
 
   function filterTaskToDelete(task) {
-    return task.id !== id;
+    return task.id !== parseInt(id);
   }
 
-  await writeTasks(filteredListOfTasks);
+  data.tasks = filteredListOfTasks;
+
+  await writeTasks(data);
 
   console.log(`Task with id ${id} deleted succesfully!`);
 }
@@ -155,8 +174,16 @@ async function updateStatus(id, status) {
     return;
   }
 
-  const tasks = await readTasks();
-  const task = tasks.find((t) => t.id === parseInt(id));
+  const allowedStatuses = ["to-do", "in-progress", "done"];
+
+  if (!allowedStatuses.includes(status)) {
+    console.error(`\x1b[31mError:\x1b[0m "${status}" is not a valid status.`);
+    console.log(`Valid options are: ${allowedStatuses.join(", ")}`);
+    return;
+  }
+
+  const data = await readTasks();
+  const task = data.tasks.find((t) => t.id === parseInt(id));
 
   if (!task) {
     console.log(`Error: Task with ID ${id} not found.`);
@@ -166,7 +193,7 @@ async function updateStatus(id, status) {
   task.status = status;
   task.updatedAt = new Date().toISOString();
 
-  await writeTasks(tasks);
+  await writeTasks(data);
   console.log(`Task ${id} marked as ${status}.`);
 }
 
