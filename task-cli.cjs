@@ -80,17 +80,32 @@ async function addTask(description) {
 async function listTasks(status) {
   const tasks = await readTasks();
 
-  const filteredListOfTasks = tasks.filter(filterByStatus);
+  const filteredTasks = status 
+    ? tasks.filter(task => task.status === status) 
+    : tasks;
 
-  function filterByStatus(task) {
-    return task.status === status;
+  if (filteredTasks.length === 0) {
+      console.log(`No tasks found${status ? ` with status: ${status}` : ""}.`);
+      return;
   }
 
-  // const filteredListOfTasks = tasks.filter(function (task) {
-  //     return task.status === status;
-  // });
+  const displayTable = filteredTasks.map(task => {
+    return {
+      ID: task.id,
+      Description: task.description,
+      Status: task.status,
+      Created: new Date(task.createdAt).toLocaleString('en-GB', {
+        dateStyle: 'medium',
+        timeStyle: 'short'
+      }),
+      Updated: new Date(task.updatedAt).toLocaleString('en-GB', {
+        dateStyle: 'medium',
+        timeStyle: 'short'
+      })
+    };
+  });
 
-  console.table(filteredListOfTasks);
+  console.table(displayTable);
 }
 
 async function updateTask(id, description) {
