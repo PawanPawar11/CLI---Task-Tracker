@@ -1,3 +1,5 @@
+#!/usr/bin/node
+
 const fs = require("fs/promises");
 const path = require("path");
 
@@ -8,7 +10,12 @@ async function readTasks() {
     const data = await fs.readFile(DB_FILE, "utf-8");
     return JSON.parse(data);
   } catch (error) {
-    return [];
+    // ENOENT means 'Error NO ENTry' (file not found)
+    if (error.code === "ENOENT") {
+      return [];
+    }
+
+    throw error; // If it's a different error (like permissions), let it crash
   }
 }
 
@@ -37,9 +44,9 @@ async function main() {
       const idxToDel = argv[0];
       await deleteTask(idxToDel);
       break;
-    case 'mark':
-        await updateStatus(argv[0], argv[1]);
-        break;
+    case "mark":
+      await updateStatus(argv[0], argv[1]);
+      break;
     default:
       console.log(
         "Usage: node task-cli.cjs [add|list|update|delete|mark-done|mark-in-progress|mark-pending]",
@@ -50,6 +57,7 @@ async function main() {
 async function addTask(description) {
   if (!description) {
     console.log("Error: Description not provided");
+    return;
   }
 
   const tasks = await readTasks();
@@ -75,7 +83,7 @@ async function listTasks(status) {
   const filteredListOfTasks = tasks.filter(filterByStatus);
 
   function filterByStatus(task) {
-    return (task.status === status);
+    return task.status === status;
   }
 
   // const filteredListOfTasks = tasks.filter(function (task) {
@@ -86,6 +94,10 @@ async function listTasks(status) {
 }
 
 async function updateTask(id, description) {
+  if (!id || isNaN(id)) {
+    console.error("Error: Please provide a valid numeric Task ID.");
+    return;
+  }
   const tasks = await readTasks();
 
   const idx = tasks.findIndex((task) => task.id === parseInt(id));
@@ -104,6 +116,11 @@ async function updateTask(id, description) {
 }
 
 async function deleteTask(id) {
+  if (!id || isNaN(id)) {
+    console.error("Error: Please provide a valid numeric Task ID.");
+    return;
+  }
+
   const tasks = await readTasks();
 
   const filteredListOfTasks = tasks.filter(filterTaskToDelete);
@@ -118,19 +135,24 @@ async function deleteTask(id) {
 }
 
 async function updateStatus(id, status) {
-    const tasks = await readTasks();
-    const task = tasks.find(t => t.id === parseInt(id));
+  if (!id || isNaN(id)) {
+    console.error("Error: Please provide a valid numeric Task ID.");
+    return;
+  }
 
-    if (!task) {
-        console.log(`Error: Task with ID ${id} not found.`);
-        return;
-    }
+  const tasks = await readTasks();
+  const task = tasks.find((t) => t.id === parseInt(id));
 
-    task.status = status;
-    task.updatedAt = new Date().toISOString();
+  if (!task) {
+    console.log(`Error: Task with ID ${id} not found.`);
+    return;
+  }
 
-    await writeTasks(tasks);
-    console.log(`Task ${id} marked as ${status}.`);
+  task.status = status;
+  task.updatedAt = new Date().toISOString();
+
+  await writeTasks(tasks);
+  console.log(`Task ${id} marked as ${status}.`);
 }
 
 main();
