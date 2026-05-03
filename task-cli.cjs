@@ -49,7 +49,7 @@ async function main() {
       break;
     default:
       console.log(
-        "Usage: node task-cli.cjs [add|list|update|delete|mark-done|mark-in-progress|mark-pending]",
+        "Usage: task-cli [add|list|update|delete|mark]",
       );
   }
 }
@@ -126,6 +126,11 @@ async function listTasks(status) {
 }
 
 async function updateTask(id, description) {
+  if (!description) {
+    console.error("Error: Please provide a new description.");
+    return;
+  }
+
   if (!id || isNaN(id)) {
     console.error("Error: Please provide a valid numeric Task ID.");
     return;
@@ -135,7 +140,7 @@ async function updateTask(id, description) {
   const idx = data.tasks.findIndex((task) => task.id === parseInt(id));
 
   if (idx < 0) {
-    console.log(`Error: Task with ID ${idx} not found!`);
+    console.log(`Error: Task with ID ${id} not found!`);
     return;
   }
 
@@ -155,17 +160,18 @@ async function deleteTask(id) {
 
   const data = await readTasks();
 
-  const filteredListOfTasks = data.tasks.filter(filterTaskToDelete);
+  const originalLength = data.tasks.length;
 
-  function filterTaskToDelete(task) {
-    return task.id !== parseInt(id);
+  data.tasks = data.tasks.filter((task) => task.id !== parseInt(id));
+
+  if (data.tasks.length === originalLength) {
+    console.log(`Error: Task with ID ${id} not found.`);
+    return;
   }
-
-  data.tasks = filteredListOfTasks;
 
   await writeTasks(data);
 
-  console.log(`Task with id ${id} deleted succesfully!`);
+  console.log(`Task with id ${id} deleted successfully!`);
 }
 
 async function updateStatus(id, status) {
@@ -176,7 +182,9 @@ async function updateStatus(id, status) {
 
   const allowedStatuses = ["to-do", "in-progress", "done"];
 
-  if (!allowedStatuses.includes(status)) {
+  const normalizedStatus = status.toLowerCase();
+
+  if (!allowedStatuses.includes(normalizedStatus)) {
     console.error(`\x1b[31mError:\x1b[0m "${status}" is not a valid status.`);
     console.log(`Valid options are: ${allowedStatuses.join(", ")}`);
     return;
@@ -190,7 +198,7 @@ async function updateStatus(id, status) {
     return;
   }
 
-  task.status = status;
+  task.status = normalizedStatus;
   task.updatedAt = new Date().toISOString();
 
   await writeTasks(data);

@@ -1,4 +1,33 @@
 {
-  "nextId": 2,
-  "tasks": []
+  "nextId": 9,
+  "tasks": [
+    {
+      "id": 4,
+      "description": "Change my GitHub README.md file as it appears to be broken",
+      "status": "to-do",
+      "createdAt": "2026-05-02T18:53:20.383Z",
+      "updatedAt": "2026-05-02T18:53:20.383Z"
+    },
+    {
+      "id": 5,
+      "description": "Create README.md file of task-cli project, containing all of the useful commands needed to interact with my application",
+      "status": "to-do",
+      "createdAt": "2026-05-02T18:55:51.372Z",
+      "updatedAt": "2026-05-02T18:55:51.374Z"
+    },
+    {
+      "id": 6,
+      "description": "If the text is too long to display on my terminal, then the look of my task description gets messed up, what can I do in order to handle this issue?",
+      "status": "to-do",
+      "createdAt": "2026-05-02T18:57:26.795Z",
+      "updatedAt": "2026-05-02T18:57:26.796Z"
+    },
+    {
+      "id": 7,
+      "description": "Create a portfolio using CLI, I have actually seen that project in one of the youtube video and I found it very cool. So I would very much like to build it",
+      "status": "to-do",
+      "createdAt": "2026-05-03T06:51:52.711Z",
+      "updatedAt": "2026-05-03T06:51:52.712Z"
+    }
+  ]
 }
